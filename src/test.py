@@ -6,18 +6,19 @@ can do simple drawings upon.
 '''
 
 import wx
+import numpy
 
 
 class DoodleWindow(wx.Window):
     colours = ['Black', 'Yellow', 'Red', 'Green', 'Blue', 'Purple',
-        'Brown', 'Aquamarine', 'Forest Green', 'Light Blue', 'Goldenrod',
-        'Cyan', 'Orange', 'Navy', 'Dark Grey', 'Light Grey']
+               'Brown', 'Aquamarine', 'Forest Green', 'Light Blue', 'Goldenrod',
+               'Cyan', 'Orange', 'Navy', 'Dark Grey', 'Light Grey']
 
     thicknesses = [1, 2, 3, 4, 6, 8, 12, 16, 24, 32, 48, 64, 96, 128]
 
     def __init__(self, parent):
         super(DoodleWindow, self).__init__(parent,
-            style=wx.NO_FULL_REPAINT_ON_RESIZE)
+                                           style=wx.NO_FULL_REPAINT_ON_RESIZE)
         self.initDrawing()
         self.makeMenu()
         self.bindEvents()
@@ -32,13 +33,13 @@ class DoodleWindow(wx.Window):
 
     def bindEvents(self):
         for event, handler in [ \
-                (wx.EVT_LEFT_DOWN, self.onLeftDown), # Start drawing
-                (wx.EVT_LEFT_UP, self.onLeftUp),     # Stop drawing
-                (wx.EVT_MOTION, self.onMotion),      # Draw
-                (wx.EVT_RIGHT_UP, self.onRightUp),   # Popup menu
-                (wx.EVT_SIZE, self.onSize),          # Prepare for redraw
-                (wx.EVT_IDLE, self.onIdle),          # Redraw
-                (wx.EVT_PAINT, self.onPaint),        # Refresh
+                (wx.EVT_LEFT_DOWN, self.onLeftDown),  # Start drawing
+                (wx.EVT_LEFT_UP, self.onLeftUp),  # Stop drawing
+                (wx.EVT_MOTION, self.onMotion),  # Draw
+                (wx.EVT_RIGHT_UP, self.onRightUp),  # Popup menu
+                (wx.EVT_SIZE, self.onSize),  # Prepare for redraw
+                (wx.EVT_IDLE, self.onIdle),  # Redraw
+                (wx.EVT_PAINT, self.onPaint),  # Refresh
                 (wx.EVT_WINDOW_DESTROY, self.cleanup)]:
             self.Bind(event, handler)
 
@@ -56,16 +57,16 @@ class DoodleWindow(wx.Window):
         ''' Make a menu that can be popped up later. '''
         self.menu = wx.Menu()
         self.idToColourMap = self.addCheckableMenuItems(self.menu,
-            self.colours)
+                                                        self.colours)
         self.bindMenuEvents(menuHandler=self.onMenuSetColour,
-            updateUIHandler=self.onCheckMenuColours,
-            ids=self.idToColourMap.keys())
-        self.menu.Break() # Next menu items go in a new column of the menu
+                            updateUIHandler=self.onCheckMenuColours,
+                            ids=self.idToColourMap.keys())
+        self.menu.Break()  # Next menu items go in a new column of the menu
         self.idToThicknessMap = self.addCheckableMenuItems(self.menu,
-            self.thicknesses)
+                                                           self.thicknesses)
         self.bindMenuEvents(menuHandler=self.onMenuSetThickness,
-            updateUIHandler=self.onCheckMenuThickness,
-            ids=self.idToThicknessMap.keys())
+                            updateUIHandler=self.onCheckMenuThickness,
+                            ids=self.idToThicknessMap.keys())
 
     @staticmethod
     def addCheckableMenuItems(menu, items):
@@ -101,9 +102,18 @@ class DoodleWindow(wx.Window):
         ''' Called when the left mouse button is released. '''
         if self.HasCapture():
             self.lines.append((self.currentColour, self.currentThickness,
-                self.currentLine))
+                               self.currentLine))
             self.currentLine = []
             self.ReleaseMouse()
+
+            img = self.buffer.ConvertToImage()
+            img = img.Scale(28, 28)
+            buf = img.GetDataBuffer()
+            arr = numpy.frombuffer(buf, dtype='uint8', count=-1, offset=0)
+            arr[0::3] = 0 # turn off red
+            arr[1::3] = 255 # turn on green
+            print len(arr)
+            print arr
 
     def onRightUp(self, event):
         ''' Called when the right mouse button is released, will popup
@@ -119,7 +129,7 @@ class DoodleWindow(wx.Window):
             currentPosition = event.GetPositionTuple()
             lineSegment = self.previousPosition + currentPosition
             self.drawLines(dc, (self.currentColour, self.currentThickness,
-                [lineSegment]))
+                                [lineSegment]))
             self.currentLine.append(lineSegment)
             self.previousPosition = currentPosition
 
@@ -187,8 +197,8 @@ class DoodleWindow(wx.Window):
 class DoodleFrame(wx.Frame):
     def __init__(self, parent=None):
         super(DoodleFrame, self).__init__(parent, title="Doodle Frame",
-            size=(800,600),
-            style=wx.DEFAULT_FRAME_STYLE|wx.NO_FULL_REPAINT_ON_RESIZE)
+                                          size=(600, 600),
+                                          style=wx.DEFAULT_FRAME_STYLE | wx.NO_FULL_REPAINT_ON_RESIZE)
         doodle = DoodleWindow(self)
 
 
