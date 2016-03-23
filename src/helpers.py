@@ -8,20 +8,19 @@ else:
 import numpy as np
 import theano
 
-
 NUM_INPUT_LAYER  = 784
 NUM_HIDDEN_LAYER = 30
 NUM_OUTPUT_LAYER = 10
 NUM_LAYERS = 3
-
+NUM_EPOCH = 30
+NUM_BATCH_SIZE = 10
+NUM_LEARN_RATE = 3.0
 
 def vectorizeData(data):
-    trainingData = zip((
+    return zip((
         [np.reshape(matrix, (NUM_INPUT_LAYER, 1)) for matrix in data[0]],
-        [makeOutputLayer(answer) for answer in data[1]]
+        data[1]
     ))
-    return trainingData
-
 
 def makeOutputLayer(answer):
     outputLayerUnitVector = np.zeros((10, 1))
@@ -34,3 +33,12 @@ def loadIntoGPU(data):
     validationElement = theano.shared(np.asarray(data[1], dtype=theano.config.floatX), borrow=True)
     return testElements, theano.tensor.cast(validationElement, 'int32')
 
+def sigmoid(t):
+    return 1.0/(1.0+np.exp(-t))
+
+def sigmoidPrime(t):
+    sig = sigmoid(t)
+    return sig*(1-sig)
+
+def size(data):
+    return data.get_value(borrow=True).shape[0] if main.USE_GPU else len(data)
