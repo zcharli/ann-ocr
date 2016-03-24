@@ -23,7 +23,7 @@ class RecognitionNetwork(object):
 
     def train(self, epoch=30, batchSize=10, learnRate=3.0):
         if epoch < 1 or batchSize < 1: raise ValueError("Input error: epoch {0}, batch size {0}".format(epoch,batchSize))
-        trainSample = self.myData[0]
+        trainSample, self.learnRate = self.myData[0], learnRate
         #validationSample, validationAnswer = self.myData[1]
         # Start generational training
         for i in xrange(epoch):
@@ -33,13 +33,27 @@ class RecognitionNetwork(object):
                 self.gradientDescent(batch)
 
     def gradientDescent(self, batch):
-        pass
+        # Generate a container matrix to aggregate error
+        for sample, answer in batch:
+            self.backpropagate(sample, answer)
 
-    def backpropagation(self):
-        pass
+    def backpropagate(self, sample, answer):
+        # Store all the possible activations for this pass through
+        weightedHiddenLayer = np.dot(self.layerWeights[0], sample) + self.layerBiases[0]
+        activationHiddenLayer = h.sigmoidDerivative(weightedHiddenLayer)
+        weightedOutputLayer = np.dot(self.layerWeights[1], activationHiddenLayer) + self.layerBiases[1]
+        activationOutputLayer = h.sigmoidDerivative(weightedOutputLayer)
+        # Compute the error of the quad cost based on hidden & output layer rate of change * (...)
+        #     Hadamard Product :(activation^l - answer)*(how fast activation func is changing)
+        # For reference our quadratic cost is 1/2 * \sum_{j}(answer_j - activation_j)^2 we get its derivative
+        # Begin to back propagate the error from our output layer
+        outputLayerBiasError = (activationOutputLayer - answer) * h.sigmoidDerivative(weightedOutputLayer)
+        outputLayerWeightError = np.dot(outputLayerBiasError, np.array(activationHiddenLayer).T) # Layer 2 weighted input transposed
+        hiddenLayerBiasError = np.dot(np.array(self.layerWeights[1]).T, outputLayerBiasError) * h.sigmoidDerivative(weightedHiddenLayer)
+        hiddenLayerError = np.dot(hiddenLayerBiasError, np.array(sample).T)
+        # Now that we propagated back to the input layer, lets update our weights
 
-    def costFunctionPrime(self):
-        pass
+        return 1,2
 
     def test(self):
         testSample = self.myData[2], self.myData[2]

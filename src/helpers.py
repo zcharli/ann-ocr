@@ -33,11 +33,11 @@ def loadIntoGPU(data):
     validationElement = theano.shared(np.asarray(data[1], dtype=theano.config.floatX), borrow=True)
     return testElements, theano.tensor.cast(validationElement, 'int32')
 
-def sigmoid(t):
+def sigmoidActivationFunction(t):
     return 1.0/(1.0+np.exp(-t))
 
-def sigmoidPrime(t):
-    sig = sigmoid(t)
+def sigmoidDerivative(t):
+    sig = sigmoidActivationFunction(t)
     return sig*(1-sig)
 
 def size(data):
