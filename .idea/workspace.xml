@@ -2,8 +2,6 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="64b90c84-04e1-4105-ad6e-ac712e1f34e5" name="Default" comment="">
-      <change type="DELETED" beforePath="$PROJECT_DIR$/data/mnist.pkl.gz" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/data/mnist2.pkl.gz" afterPath="" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
     </list>
     <ignored path="ANNDigitRecognition.iws" />
@@ -560,7 +558,14 @@
       <option name="project" value="LOCAL" />
       <updated>1458800605248</updated>
     </task>
-    <option name="localTasksCounter" value="6" />
+    <task id="LOCAL-00006" summary="Back propagate done, next up, update weights and biases in gradient descent">
+      <created>1458800682702</created>
+      <option name="number" value="00006" />
+      <option name="presentableId" value="LOCAL-00006" />
+      <option name="project" value="LOCAL" />
+      <updated>1458800682702</updated>
+    </task>
+    <option name="localTasksCounter" value="7" />
     <servers />
   </component>
   <component name="ToolWindowManager">
