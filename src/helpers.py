@@ -15,6 +15,7 @@ NUM_LAYERS = 3
 NUM_EPOCH = 30
 NUM_BATCH_SIZE = 10
 NUM_LEARN_RATE = 3.0
+TESTING = True
 
 def vectorizeData(data):
     return zip((
@@ -34,6 +35,7 @@ def loadIntoGPU(data):
     return testElements, theano.tensor.cast(validationElement, 'int32')
 
 def sigmoidActivationFunction(t):
+
     return 1.0/(1.0+np.exp(-t))
 
 def sigmoidDerivative(t):

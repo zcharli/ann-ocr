@@ -6,19 +6,35 @@ can do simple drawings upon.
 '''
 
 import wx
-import numpy
+import numpy as np
+import RecognitionNetwork as net
+import cPickle as pickle
 
+def loadData():
+    # with gzip.open("../data/mnist.pkl.gz") as f:
+    #     data = prepareMNISTData(pickle.load(f))
+    with open("../data/vanilla.pkl") as f:
+        data = preparePickledData(pickle.load(f))
+    annRecognitionNetwork = net.RecognitionNetwork(data, True)
+    #annRecognitionNetwork.train(h.NUM_EPOCH, h.NUM_BATCH_SIZE, h.NUM_LEARN_RATE)
+
+def preparePickledData(data):
+    return data["layerHiddenBiases"], data["layerOutputBiases"], \
+           data["layerOutputToHiddenWeights"], data["layerHiddenToInputWeights"]
 
 class DoodleWindow(wx.Window):
-    colours = ['Black', 'Yellow', 'Red', 'Green', 'Blue', 'Purple',
-               'Brown', 'Aquamarine', 'Forest Green', 'Light Blue', 'Goldenrod',
-               'Cyan', 'Orange', 'Navy', 'Dark Grey', 'Light Grey']
+    # colours = ['Black', 'Yellow', 'Red', 'Green', 'Blue', 'Purple',
+    #            'Brown', 'Aquamarine', 'Forest Green', 'Light Blue', 'Goldenrod',
+    #            'Cyan', 'Orange', 'Navy', 'Dark Grey', 'Light Grey']
+    colours = ['Black']
 
     thicknesses = [1, 2, 3, 4, 6, 8, 12, 16, 24, 32, 48, 64, 96, 128]
 
     def __init__(self, parent):
-        super(DoodleWindow, self).__init__(parent,
-                                           style=wx.NO_FULL_REPAINT_ON_RESIZE)
+        super(DoodleWindow, self).__init__(parent, style=wx.NO_FULL_REPAINT_ON_RESIZE)
+        with open("../data/vanilla.pkl") as f:
+            data = preparePickledData(pickle.load(f))
+        self.annRecognitionNetwork = net.RecognitionNetwork(data, True)
         self.initDrawing()
         self.makeMenu()
         self.bindEvents()
@@ -26,7 +42,7 @@ class DoodleWindow(wx.Window):
 
     def initDrawing(self):
         self.SetBackgroundColour('WHITE')
-        self.currentThickness = self.thicknesses[0]
+        self.currentThickness = self.thicknesses[8]
         self.currentColour = self.colours[0]
         self.lines = []
         self.previousPosition = (0, 0)
@@ -105,15 +121,15 @@ class DoodleWindow(wx.Window):
                                self.currentLine))
             self.currentLine = []
             self.ReleaseMouse()
-
             img = self.buffer.ConvertToImage()
             img = img.Scale(28, 28)
             buf = img.GetDataBuffer()
-            arr = numpy.frombuffer(buf, dtype='uint8', count=-1, offset=0)
-            arr[0::3] = 0 # turn off red
-            arr[1::3] = 255 # turn on green
-            print len(arr)
-            print arr
+            arr = np.frombuffer(buf, dtype='uint8', count=-1, offset=0)
+            arr = arr[::3]
+            arr = map(lambda x: np.asarray([0.0]) if x == 255 else np.asarray([1.0]), arr)
+            activationVector = self.annRecognitionNetwork.feedforward(arr)
+            number = np.argmax(activationVector)
+            print number
 
     def onRightUp(self, event):
         ''' Called when the right mouse button is released, will popup
@@ -160,6 +176,12 @@ class DoodleWindow(wx.Window):
             self.menu.Destroy()
             del self.menu
 
+    def clearDrawing(self, event):
+        print "Clearing"
+        self.lines = []
+        self.initBuffer()
+        self.Refresh()
+
     # These two event handlers are called before the menu is displayed
     # to determine which items should be checked.
     def onCheckMenuColours(self, event):
@@ -200,6 +222,12 @@ class DoodleFrame(wx.Frame):
                                           size=(600, 600),
                                           style=wx.DEFAULT_FRAME_STYLE | wx.NO_FULL_REPAINT_ON_RESIZE)
         doodle = DoodleWindow(self)
+        menuBar = wx.MenuBar()
+        clearMenu = wx.Menu()
+        clearMenu.Append(101, "&Clear", "Cleared Drawing")
+        menuBar.Append(clearMenu, "&Settings")
+        self.SetMenuBar(menuBar)
+        self.Bind(wx.EVT_MENU, doodle.clearDrawing, id=101)
 
 
 if __name__ == '__main__':
