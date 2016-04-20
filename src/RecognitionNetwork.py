@@ -28,8 +28,8 @@ class RecognitionNetwork(object):
         else:
             self.layerHiddenBiases = data[0]
             self.layerOutputBiases = data[1]
-            self.layerHiddenToOutput = data[2]
-            self.layerInputToHidden = data[3]
+            self.layerHiddenToOutputWeights = data[2]
+            self.layerInputToHiddenWeights = data[3]
 
     def train(self, epoch=30, batchSize=10, learnRate=3.0):
         if epoch < 1 or batchSize < 1: raise ValueError(
@@ -38,30 +38,26 @@ class RecognitionNetwork(object):
         # validationSample, validationAnswer = self.myData[1]
         # Start generational training
         length = len(self.trainingData)
-        testLength = len(self.testData)
         for i in xrange(epoch):
             np.random.shuffle(self.trainingData)
             batches = [self.trainingData[j:j + batchSize] for j in xrange(0, length, batchSize)]
             for batch in batches:
                 self.gradientDescent(batch)
-            if h.TESTING:
-                print "Epoch {0}: {1} / {2}".format(
-                    i, self.test(self.testData), testLength)
-            else:
-                print "Epoch {0} complete".format(j)
-        # d = {"layerHiddenBiases": self.layerHiddenBiases, "layerOutputBiases": self.layerOutputBiases,
-        #      "layerOutputToHiddenWeights": self.layerOutputToHiddenWeights,
-        #      "layerHiddenToInputWeights" : self.layerHiddenToInputWeights}
-        # saved = open(r'..\data\vanilla.pkl', 'wb')
-        # pickle.dump(d, saved)
-        # saved.close()
+            print "Epoch %d: %d / 10000" % (i+1, self.test(self.testData))
+
+        d = {"layerHiddenBiases": self.layerHiddenBiases, "layerOutputBiases": self.layerOutputBiases,
+             "layerOutputToHiddenWeights": self.layerInputToHiddenWeights,
+             "layerHiddenToInputWeights" : self.layerHiddenToOutputWeights}
+        saved = open(r'..\data\vanilla.pkl', 'wb')
+        pickle.dump(d, saved)
+        saved.close()
 
     def gradientDescent(self, batch):
         # Generate a container matrix to aggregate error
         aggregateHiddenLayerBiases = np.zeros(self.layerHiddenBiases.shape)
         aggregateOutputLayerBiases = np.zeros(self.layerOutputBiases.shape)
-        aggregateHiddenLayerWeight = np.zeros(self.layerInputToHidden.shape)
-        aggregateOutputLayerWeight = np.zeros(self.layerHiddenToOutput.shape)
+        aggregateHiddenLayerWeight = np.zeros(self.layerInputToHiddenWeights.shape)
+        aggregateOutputLayerWeight = np.zeros(self.layerHiddenToOutputWeights.shape)
         for sample, answer in batch:
             bpHiddenBias, bpOutputBias, bpHiddenWeight, bpOutputWeight = self.backpropagate(sample, answer)
             aggregateHiddenLayerBiases += bpHiddenBias
@@ -70,14 +66,14 @@ class RecognitionNetwork(object):
             aggregateOutputLayerWeight += bpOutputWeight
         self.layerOutputBiases -= (self.learnRate / len(batch)) * aggregateOutputLayerBiases
         self.layerHiddenBiases -= (self.learnRate / len(batch)) * aggregateHiddenLayerBiases
-        self.layerInputToHidden -= (self.learnRate / len(batch)) * aggregateHiddenLayerWeight
-        self.layerHiddenToOutput -= (self.learnRate / len(batch)) * aggregateOutputLayerWeight
+        self.layerInputToHiddenWeights -= (self.learnRate / len(batch)) * aggregateHiddenLayerWeight
+        self.layerHiddenToOutputWeights -= (self.learnRate / len(batch)) * aggregateOutputLayerWeight
 
     def backpropagate(self, sample, answer):
         # Store all the possible activations for this pass through
-        weightedHiddenLayer = np.dot(self.layerInputToHidden, sample) + self.layerHiddenBiases
+        weightedHiddenLayer = np.dot(self.layerInputToHiddenWeights, sample) + self.layerHiddenBiases
         activationHiddenLayer = h.sigmoidActivationFunction(weightedHiddenLayer)
-        weightedOutputLayer = np.dot(self.layerHiddenToOutput, activationHiddenLayer) + self.layerOutputBiases
+        weightedOutputLayer = np.dot(self.layerHiddenToOutputWeights, activationHiddenLayer) + self.layerOutputBiases
         activationOutputLayer = h.sigmoidActivationFunction(weightedOutputLayer)
         # Compute the error of the quad cost based on hidden & output layer rate of change * (...)
         #     Hadamard Product :(activation^l - answer)*(how fast activation func is changing)
@@ -86,7 +82,7 @@ class RecognitionNetwork(object):
         outputLayerBiasError = (activationOutputLayer - answer) * h.sigmoidDerivative(weightedOutputLayer)
         # Layer 2 weighted input transposed
         outputLayerWeightError = np.dot(outputLayerBiasError, np.array(activationHiddenLayer).T)
-        hiddenLayerBiasError = np.dot(np.array(self.layerHiddenToOutput).T,
+        hiddenLayerBiasError = np.dot(np.array(self.layerHiddenToOutputWeights).T,
                                       outputLayerBiasError) * h.sigmoidDerivative(weightedHiddenLayer)
         hiddenLayerWeightError = np.dot(hiddenLayerBiasError, np.array(sample).T)
         # Now that we propagated back to the input layer, lets update our weights
@@ -94,13 +90,11 @@ class RecognitionNetwork(object):
 
     def generateRandomWeights(self):
         # Initialize Hidden Layer biases, followed by output layer biases (Gaussian distribution)
-        # self.layerBiases = [np.random.randn(h.NUM_HIDDEN_LAYER, 1), np.random.randn(h.NUM_OUTPUT_LAYER, 1)]
         self.layerHiddenBiases = np.random.randn(h.NUM_HIDDEN_LAYER, 1)
         self.layerOutputBiases = np.random.randn(h.NUM_OUTPUT_LAYER, 1)
-        self.layerHiddenToOutput = np.random.randn(h.NUM_OUTPUT_LAYER, h.NUM_HIDDEN_LAYER)
-        self.layerInputToHidden = np.random.randn(h.NUM_HIDDEN_LAYER, h.NUM_INPUT_LAYER)
+        self.layerHiddenToOutputWeights = np.random.randn(h.NUM_OUTPUT_LAYER, h.NUM_HIDDEN_LAYER)
+        self.layerInputToHiddenWeights = np.random.randn(h.NUM_HIDDEN_LAYER, h.NUM_INPUT_LAYER)
         # Initialize random weights for each layer. Idx 0) Input->Hidden layer mapping 1)
-        # self.layerWeights = [self.layerHiddenToInputWeights, self.layerOutputToHiddenWeights]
         print "Generated weights"
 
     def test(self, testData):
@@ -111,7 +105,7 @@ class RecognitionNetwork(object):
 
     def feedforward(self, sampleActivation):
         # Pass the sample through from input to our hidden layer
-        sampleActivation = h.sigmoidActivationFunction(np.dot(self.layerInputToHidden, sampleActivation) + self.layerHiddenBiases)
+        sampleActivation = h.sigmoidActivationFunction(np.dot(self.layerInputToHiddenWeights, sampleActivation) + self.layerHiddenBiases)
         # Lastly pass it out from our output layer
-        sampleActivation = h.sigmoidActivationFunction(np.dot(self.layerHiddenToOutput, sampleActivation) + self.layerOutputBiases)
+        sampleActivation = h.sigmoidActivationFunction(np.dot(self.layerHiddenToOutputWeights, sampleActivation) + self.layerOutputBiases)
         return sampleActivation

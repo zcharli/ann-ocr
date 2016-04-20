@@ -4,12 +4,12 @@ import main
 import numpy as np
 
 NUM_INPUT_LAYER  = 784
-NUM_HIDDEN_LAYER = 100
+NUM_HIDDEN_LAYER = 75
 NUM_OUTPUT_LAYER = 10
 NUM_LAYERS = 3
 NUM_EPOCH = 30
 NUM_BATCH_SIZE = 10
-NUM_LEARN_RATE = 2.5
+NUM_LEARN_RATE = 3.0
 TESTING = True
 
 def vectorizeData(data):

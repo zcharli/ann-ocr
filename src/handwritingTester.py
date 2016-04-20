@@ -20,7 +20,7 @@ def loadData():
 
 def preparePickledData(data):
     return data["layerHiddenBiases"], data["layerOutputBiases"], \
-           data["layerOutputToHiddenWeights"], data["layerHiddenToInputWeights"]
+           data["layerHiddenToInputWeights"], data["layerOutputToHiddenWeights"]
 
 class DoodleWindow(wx.Window):
     # colours = ['Black', 'Yellow', 'Red', 'Green', 'Blue', 'Purple',
@@ -129,7 +129,9 @@ class DoodleWindow(wx.Window):
             arr = map(lambda x: np.asarray([0.0]) if x == 255 else np.asarray([1.0]), arr)
             activationVector = self.annRecognitionNetwork.feedforward(arr)
             number = np.argmax(activationVector)
+            #print activationVector
             print number
+            #print "I think its a %d, I am %.2f%% sure..." % (number, 100*activationVector.item((number,0)))
 
     def onRightUp(self, event):
         ''' Called when the right mouse button is released, will popup
