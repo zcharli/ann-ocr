@@ -9,7 +9,7 @@ Dr. Oommen
 from __future__ import division
 USE_GPU = False
 import numpy as np
-from mnist import MNIST
+#from mnist import MNIST
 try:
     import cPickle as pickle
 except:
